@@ -58,7 +58,8 @@ create table if not exists public.challenges (
   module_id uuid references public.modules (id) on delete set null,
   name text not null,
   start_date date not null,
-  end_date date not null
+  end_date date not null,
+  notes text
 );
 
 create table if not exists public.timetable (
@@ -68,6 +69,15 @@ create table if not exists public.timetable (
   hour integer not null check (hour between 8 and 14),
   module_id uuid not null references public.modules (id) on delete cascade,
   unique (course_id, weekday, hour)
+);
+
+create table if not exists public.sessions (
+  id uuid primary key default gen_random_uuid(),
+  course_id uuid not null references public.courses (id) on delete cascade,
+  date date not null,
+  hour integer not null check (hour between 8 and 14),
+  module_id uuid not null references public.modules (id) on delete cascade,
+  unique (course_id, date, hour)
 );
 
 create table if not exists public.enrollments (
@@ -84,7 +94,7 @@ create table if not exists public.absences (
   date date not null,
   hour integer not null check (hour between 8 and 14),
   module_id uuid not null references public.modules (id) on delete cascade,
-  status text not null check (status in ('justified', 'unjustified')),
+  status text not null check (status in ('justified', 'unjustified', 'late')),
   note text,
   created_by uuid references public.profiles (id) on delete set null,
   created_at timestamptz not null default now(),
@@ -150,6 +160,7 @@ alter table public.holidays enable row level security;
 alter table public.modules enable row level security;
 alter table public.challenges enable row level security;
 alter table public.timetable enable row level security;
+alter table public.sessions enable row level security;
 alter table public.enrollments enable row level security;
 alter table public.absences enable row level security;
 
@@ -170,7 +181,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['courses', 'evaluations', 'holidays', 'modules', 'challenges', 'timetable']
+  foreach t in array array['courses', 'evaluations', 'holidays', 'modules', 'challenges', 'timetable', 'sessions']
   loop
     execute format('drop policy if exists %I_select on public.%I', t, t);
     execute format(

@@ -13,6 +13,7 @@ import {
   Holiday,
   Module,
   Profile,
+  Session,
   TimetableSlot,
   emptyData,
 } from './models';
@@ -57,6 +58,11 @@ export class DataService {
   );
   readonly timetable = computed(() =>
     this.data().timetable.filter((t) => t.course_id === this.selectedCourseId()),
+  );
+  readonly sessions = computed(() =>
+    this.data()
+      .sessions.filter((s) => s.course_id === this.selectedCourseId())
+      .sort((a, b) => a.date.localeCompare(b.date) || a.hour - b.hour),
   );
   readonly profiles = computed(() => this.data().profiles);
   readonly students = computed(() =>
@@ -103,6 +109,7 @@ export class DataService {
           'modules',
           'challenges',
           'timetable',
+          'sessions',
           'profiles',
           'enrollments',
           'absences',
@@ -321,6 +328,72 @@ export class DataService {
           (t) => !(t.course_id === courseId && t.weekday === weekday && t.hour === hour),
         );
         return { ...current, timetable: [...others, data as TimetableSlot] };
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Date-specific sessions (real timetable)
+  // ---------------------------------------------------------------------------
+
+  findSession(date: string, hour: number): Session | undefined {
+    return this.sessions().find((s) => s.date === date && s.hour === hour);
+  }
+
+  async setSession(date: string, hour: number, moduleId: string | null): Promise<void> {
+    const courseId = this.selectedCourseId();
+    const existing = this.findSession(date, hour);
+
+    if (isDemoMode) {
+      const rest = this.data().sessions.filter(
+        (s) => !(s.course_id === courseId && s.date === date && s.hour === hour),
+      );
+      const next = moduleId
+        ? [
+            ...rest,
+            {
+              id: existing?.id ?? this.uid(),
+              course_id: courseId,
+              date,
+              hour,
+              module_id: moduleId,
+            },
+          ]
+        : rest;
+      this.commitDemo({ ...this.data(), sessions: next });
+      return;
+    }
+
+    if (!supabase) throw new Error('NO_SUPABASE');
+    if (!moduleId) {
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('course_id', courseId)
+        .eq('date', date)
+        .eq('hour', hour);
+      if (error) throw new Error(error.message);
+      this.data.update((current) => ({
+        ...current,
+        sessions: current.sessions.filter(
+          (s) => !(s.course_id === courseId && s.date === date && s.hour === hour),
+        ),
+      }));
+    } else {
+      const { data, error } = await supabase
+        .from('sessions')
+        .upsert(
+          { course_id: courseId, date, hour, module_id: moduleId },
+          { onConflict: 'course_id,date,hour' },
+        )
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      this.data.update((current) => {
+        const others = current.sessions.filter(
+          (s) => !(s.course_id === courseId && s.date === date && s.hour === hour),
+        );
+        return { ...current, sessions: [...others, data as Session] };
       });
     }
   }
@@ -608,6 +681,7 @@ export class DataService {
           modules: next.modules.filter((m) => m.course_id !== id),
           challenges: next.challenges.filter((c) => c.course_id !== id),
           timetable: next.timetable.filter((t) => t.course_id !== id),
+          sessions: next.sessions.filter((s) => s.course_id !== id),
           enrollments: next.enrollments.filter((e) => e.course_id !== id),
           absences: next.absences.filter((a) => a.course_id !== id),
         };
@@ -617,6 +691,7 @@ export class DataService {
         next = {
           ...next,
           timetable: next.timetable.filter((t) => !moduleIds.has(t.module_id)),
+          sessions: next.sessions.filter((s) => !moduleIds.has(s.module_id)),
           absences: next.absences.filter((a) => !moduleIds.has(a.module_id)),
           challenges: next.challenges.map((c) =>
             c.module_id && moduleIds.has(c.module_id) ? { ...c, module_id: null } : c,

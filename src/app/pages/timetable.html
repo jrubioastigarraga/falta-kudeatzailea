@@ -11,7 +11,7 @@
         <i class="fa-solid fa-check me-1"></i>{{ i18n.t('toast.saved') }}
       </span>
     }
-    <button class="btn btn-outline-danger btn-sm" type="button" (click)="clearAll()">
+    <button class="btn btn-outline-danger btn-sm" type="button" (click)="clearWeek()">
       <i class="fa-solid fa-eraser me-1"></i>{{ i18n.t('timetable.clear') }}
     </button>
   </div>
@@ -19,6 +19,26 @@
 
 <div class="alert alert-info py-2 px-3 text-xs">
   <i class="fa-solid fa-circle-info me-1"></i>{{ i18n.t('timetable.hint') }}
+</div>
+
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <label class="form-label mb-0 me-2">{{ i18n.t('common.week') }}</label>
+      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="changeWeek(-1)">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+      <div class="form-control form-control-sm text-center font-weight-bold" style="max-width: 220px">
+        {{ weekLabel() }}
+      </div>
+      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="changeWeek(1)">
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+      <button class="btn btn-sm btn-outline-primary" type="button" (click)="goToday()">
+        {{ i18n.t('common.today') }}
+      </button>
+    </div>
+  </div>
 </div>
 
 @if (!data.modules().length) {
@@ -35,29 +55,32 @@
           <thead>
             <tr>
               <th class="hour-col">{{ i18n.t('common.hours') }}</th>
-              @for (weekday of weekdays; track weekday) {
-                <th>{{ i18n.weekdayName(weekday) }}</th>
+              @for (day of weekDays(); track day.iso) {
+                <th>
+                  <div class="text-uppercase">{{ i18n.weekdayName(day.weekday) }}</div>
+                  <div class="text-gray-500 font-weight-normal">{{ i18n.formatDayMonth(day.iso) }}</div>
+                  @if (holidayDates().has(day.iso)) {
+                    <span class="badge badge-soft-warning mt-1">{{ i18n.t('absences.holiday') }}</span>
+                  }
+                </th>
               }
             </tr>
           </thead>
           <tbody>
-            @for (hour of hours; track hour) {
+            @for (row of rows(); track row.hour) {
               <tr>
-                <td class="hour-col">{{ hour }}:00</td>
-                @for (weekday of weekdays; track weekday) {
-                  <td [style.background]="slot(weekday, hour) ? moduleColor(slot(weekday, hour)?.module_id) + '14' : ''">
+                <td class="hour-col">{{ row.hour }}:00</td>
+                @for (cell of row.cells; track cell.iso) {
+                  <td [style.background]="cell.session ? moduleColor(cell.session.module_id) + '14' : ''">
                     <select
                       class="form-select slot-select"
-                      (change)="change(weekday, hour, $event)"
-                      [attr.aria-label]="i18n.weekdayName(weekday) + ' ' + hour"
+                      (change)="change(cell.iso, row.hour, $event)"
+                      [attr.aria-label]="i18n.weekdayName(cell.weekday) + ' ' + row.hour"
                     >
-                      <option value="" [selected]="!slot(weekday, hour)">—</option>
-                      @for (item of data.modules(); track item.id) {
-                        <option
-                          [value]="item.id"
-                          [selected]="slot(weekday, hour)?.module_id === item.id"
-                        >
-                          {{ item.code || item.name }}
+                      <option value="" [selected]="!cell.session">—</option>
+                      @for (module of data.modules(); track module.id) {
+                        <option [value]="module.id" [selected]="cell.session?.module_id === module.id">
+                          {{ module.code || module.name }}
                         </option>
                       }
                     </select>

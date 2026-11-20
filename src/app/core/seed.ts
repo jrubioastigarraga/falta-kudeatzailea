@@ -138,6 +138,7 @@ export function seedData(): AppData {
       },
     ],
     timetable,
+    sessions: [],
     profiles: [
       {
         id: 'u-admin',

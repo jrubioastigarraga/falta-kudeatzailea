@@ -71,19 +71,27 @@ export class ReportsPage {
     })),
   );
 
-  readonly challengeRows = computed<ReportRow[]>(() =>
-    this.data.challenges().map((challenge) => {
+  readonly challengeRows = computed<ReportRow[]>(() => {
+    const sala = this.data.modules().find((m) => m.code === 'SALA' || m.name === 'Sala');
+    return this.data.challenges().map((challenge) => {
       const moduleId = this.moduleFilter() || challenge.module_id || null;
       const module = this.data.modules().find((m) => m.id === moduleId);
+      const excludeModuleId =
+        !this.moduleFilter() && !challenge.module_id ? (sala?.id ?? null) : null;
       return {
         name: challenge.name,
         subtitle: `${module?.name ?? this.i18n.t('reports.allModules')} · ${this.i18n.formatDate(
           challenge.start_date,
         )} — ${this.i18n.formatDate(challenge.end_date)}`,
-        stats: this.scope(challenge.start_date, challenge.end_date, moduleId),
+        stats: this.scope(
+          challenge.start_date,
+          challenge.end_date,
+          moduleId,
+          excludeModuleId,
+        ),
       };
-    }),
-  );
+    });
+  });
 
   readonly overallRows = computed<ReportRow[]>(() => {
     const course = this.course();
@@ -99,13 +107,19 @@ export class ReportsPage {
     ];
   });
 
-  private scope(start: string, end: string, moduleId: string | null): AttendanceStats {
+  private scope(
+    start: string,
+    end: string,
+    moduleId: string | null,
+    excludeModuleId: string | null = null,
+  ): AttendanceStats {
     const course = this.course();
     if (!course) return emptyStats();
     return computeStats(this.data.data(), {
       courseId: course.id,
       studentIds: this.studentIds(),
       moduleId,
+      excludeModuleId,
       start,
       end,
     });

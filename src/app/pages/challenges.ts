@@ -23,6 +23,7 @@ export class ChallengesPage {
   moduleId = '';
   startDate = '';
   endDate = '';
+  notes = '';
 
   readonly rows = computed(() => this.data.challenges());
 
@@ -48,6 +49,7 @@ export class ChallengesPage {
     this.moduleId = challenge?.module_id ?? '';
     this.startDate = challenge?.start_date ?? '';
     this.endDate = challenge?.end_date ?? '';
+    this.notes = challenge?.notes ?? '';
     this.error.set(null);
     this.modalOpen.set(true);
   }
@@ -74,6 +76,7 @@ export class ChallengesPage {
         module_id: this.moduleId || null,
         start_date: this.startDate,
         end_date: this.endDate,
+        notes: this.notes.trim() || null,
       });
       this.modalOpen.set(false);
     } catch (err) {

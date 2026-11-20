@@ -193,12 +193,13 @@ const DICT: Record<string, Entry> = {
   'challenges.active': ['Abian', 'En curso'],
   'challenges.upcoming': ['Datorrena', 'Próximo'],
   'challenges.finished': ['Amaituta', 'Finalizado'],
+  'challenges.notes': ['Oharrak', 'Notas'],
 
   'timetable.title': ['Ordutegia', 'Horario'],
   'timetable.subtitle': ['Astelehenetik ostiralera, 08:00-14:00', 'De lunes a viernes, 08:00-14:00'],
   'timetable.hint': [
-    'Aukeratu modulu bat gelaxka bakoitzean. Aldaketak automatikoki gordetzen dira.',
-    'Selecciona un módulo en cada celda. Los cambios se guardan automáticamente.',
+    'Aukeratu modulu bat data eta ordu bakoitzean. Aldaketak automatikoki gordetzen dira.',
+    'Selecciona un módulo en cada fecha y hora. Los cambios se guardan automáticamente.',
   ],
   'timetable.clear': ['Garbitu', 'Vaciar'],
   'timetable.noModules': ['Lehenengo moduluak sortu behar dituzu', 'Primero debes crear módulos'],
@@ -270,6 +271,7 @@ const DICT: Record<string, Entry> = {
   'status.present': ['Bertan', 'Presente'],
   'status.justified': ['Justifikatua', 'Justificada'],
   'status.unjustified': ['Justifikatu gabea', 'No justificada'],
+  'status.late': ['Berandutzea', 'Retraso'],
 
   'role.admin': ['Administratzailea', 'Administrador'],
   'role.student': ['Ikaslea', 'Estudiante'],

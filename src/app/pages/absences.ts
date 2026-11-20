@@ -16,7 +16,7 @@ interface Cell {
   today: boolean;
   moduleId?: string;
   moduleCode?: string;
-  status: 'justified' | 'unjustified' | null;
+  status: 'justified' | 'unjustified' | 'late' | null;
 }
 
 @Component({
@@ -73,6 +73,7 @@ export class AbsencesPage {
     return {
       justified: list.filter((a) => a.status === 'justified').length,
       unjustified: list.filter((a) => a.status === 'unjustified').length,
+      late: list.filter((a) => a.status === 'late').length,
       total: list.length,
     };
   });
@@ -86,12 +87,14 @@ export class AbsencesPage {
     return this.hours.map((hour) => ({
       hour,
       cells: this.weekDays().map<Cell>((day) => {
-        const slot = this.data.findSlot(day.weekday, hour);
+        const session = this.data.findSession(day.iso, hour);
+        const slot = session ? undefined : this.data.findSlot(day.weekday, hour);
+        const moduleId = session?.module_id ?? slot?.module_id;
         const absence = studentId
           ? this.data.findAbsence(studentId, day.iso, hour)
           : undefined;
-        const module = slot
-          ? this.data.modules().find((m) => m.id === slot.module_id)
+        const module = moduleId
+          ? this.data.modules().find((m) => m.id === moduleId)
           : undefined;
         return {
           weekday: day.weekday,
@@ -101,7 +104,7 @@ export class AbsencesPage {
           holiday: holidays.has(day.iso),
           outOfCourse: !!course && (day.iso < course.start_date || day.iso > course.end_date),
           today: day.iso === todayIso,
-          moduleId: slot?.module_id,
+          moduleId,
           moduleCode: module?.code || module?.name,
           status: absence?.status ?? null,
         };
@@ -129,7 +132,13 @@ export class AbsencesPage {
     if (!studentId) return;
 
     const next =
-      cell.status === null ? 'justified' : cell.status === 'justified' ? 'unjustified' : null;
+      cell.status === null
+        ? 'justified'
+        : cell.status === 'justified'
+          ? 'unjustified'
+          : cell.status === 'unjustified'
+            ? 'late'
+            : null;
     const key = `${cell.iso}-${cell.hour}`;
     this.savingKey.set(key);
     this.error.set(null);
@@ -145,6 +154,7 @@ export class AbsencesPage {
   label(status: Cell['status']): string {
     if (status === 'justified') return this.i18n.t('status.justified');
     if (status === 'unjustified') return this.i18n.t('status.unjustified');
+    if (status === 'late') return this.i18n.t('status.late');
     return this.i18n.t('status.present');
   }
 

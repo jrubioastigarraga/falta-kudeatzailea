@@ -5,6 +5,7 @@ export interface AttendanceStats {
   expected: number;
   justified: number;
   unjustified: number;
+  late: number;
   total: number;
   justifiedPct: number;
   unjustifiedPct: number;
@@ -16,6 +17,7 @@ export interface StatsScope {
   courseId: string;
   studentIds: string[];
   moduleId?: string | null;
+  excludeModuleId?: string | null;
   start: string;
   end: string;
 }
@@ -25,6 +27,7 @@ export function emptyStats(): AttendanceStats {
     expected: 0,
     justified: 0,
     unjustified: 0,
+    late: 0,
     total: 0,
     justifiedPct: 0,
     unjustifiedPct: 0,
@@ -43,8 +46,21 @@ export function computeStats(data: AppData, scope: StatsScope): AttendanceStats 
   const slots = data.timetable.filter(
     (t) => t.course_id === scope.courseId && (!scope.moduleId || t.module_id === scope.moduleId),
   );
+  const sessions = data.sessions.filter(
+    (s) =>
+      s.course_id === scope.courseId &&
+      s.date >= scope.start &&
+      s.date <= scope.end &&
+      !holidaySet.has(s.date) &&
+      (!scope.moduleId || s.module_id === scope.moduleId) &&
+      (!scope.excludeModuleId || s.module_id !== scope.excludeModuleId),
+  );
 
-  const expectedPerStudent = expectedHours(slots, holidaySet, scope.start, scope.end);
+  // When the course has a date-specific schedule, it is the source of truth.
+  const useSessions = data.sessions.some((s) => s.course_id === scope.courseId);
+  const expectedPerStudent = useSessions
+    ? sessions.length
+    : expectedHours(slots, holidaySet, scope.start, scope.end);
   const expected = expectedPerStudent * studentIds.size;
 
   const absences = data.absences.filter(
@@ -53,20 +69,22 @@ export function computeStats(data: AppData, scope: StatsScope): AttendanceStats 
       studentIds.has(a.student_id) &&
       a.date >= scope.start &&
       a.date <= scope.end &&
-      (!scope.moduleId || a.module_id === scope.moduleId),
+      (!scope.moduleId || a.module_id === scope.moduleId) &&
+      (!scope.excludeModuleId || a.module_id !== scope.excludeModuleId),
   );
 
   const justified = absences.filter((a) => a.status === 'justified').length;
   const unjustified = absences.filter((a) => a.status === 'unjustified').length;
-  const total = justified + unjustified;
+  const late = absences.filter((a) => a.status === 'late').length;
 
-  return buildStats(expected, justified, unjustified);
+  return buildStats(expected, justified, unjustified, late);
 }
 
 export function buildStats(
   expected: number,
   justified: number,
   unjustified: number,
+  late = 0,
 ): AttendanceStats {
   const total = justified + unjustified;
   const safeExpected = expected || 0;
@@ -74,6 +92,7 @@ export function buildStats(
     expected: safeExpected,
     justified,
     unjustified,
+    late,
     total,
     justifiedPct: safeExpected ? (justified / safeExpected) * 100 : 0,
     unjustifiedPct: safeExpected ? (unjustified / safeExpected) * 100 : 0,

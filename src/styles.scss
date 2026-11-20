@@ -402,6 +402,11 @@ a {
   border-color: var(--fk-danger);
   color: #be2617;
 }
+.attendance-cell.late {
+  background: rgba(54, 185, 204, 0.18);
+  border-color: var(--fk-info);
+  color: #1a7f8d;
+}
 .attendance-cell.empty {
   background: #f8f9fc;
   color: #c3c6d4;

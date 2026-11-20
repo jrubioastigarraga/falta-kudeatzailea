@@ -35,7 +35,12 @@
               {{ i18n.t('dashboard.absences') }}
             </div>
             <div class="stat-value">{{ overall().total }}</div>
-            <div class="text-gray-500 text-xs">{{ i18n.t('reports.totalHours') }}: {{ overall().expected }}</div>
+            <div class="text-gray-500 text-xs">
+              {{ i18n.t('reports.totalHours') }}: {{ overall().expected }}
+              @if (overall().late) {
+                · {{ overall().late }} {{ i18n.t('status.late').toLowerCase() }}
+              }
+            </div>
           </div>
           <i class="fa-solid fa-clipboard-user stat-icon text-primary"></i>
         </div>

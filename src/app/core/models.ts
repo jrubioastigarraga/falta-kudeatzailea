@@ -37,6 +37,7 @@ export interface Challenge {
   name: string;
   start_date: string;
   end_date: string;
+  notes?: string | null;
 }
 
 export interface TimetableSlot {
@@ -44,6 +45,14 @@ export interface TimetableSlot {
   course_id: string;
   weekday: number; // 1 = Monday ... 7 = Sunday
   hour: number; // 8..14
+  module_id: string;
+}
+
+export interface Session {
+  id: string;
+  course_id: string;
+  date: string;
+  hour: number;
   module_id: string;
 }
 
@@ -63,7 +72,7 @@ export interface Enrollment {
   student_id: string;
 }
 
-export type AbsenceStatus = 'justified' | 'unjustified';
+export type AbsenceStatus = 'justified' | 'unjustified' | 'late';
 
 export interface Absence {
   id: string;
@@ -83,6 +92,7 @@ export interface AppData {
   modules: Module[];
   challenges: Challenge[];
   timetable: TimetableSlot[];
+  sessions: Session[];
   profiles: Profile[];
   enrollments: Enrollment[];
   absences: Absence[];
@@ -106,6 +116,7 @@ export const emptyData = (): AppData => ({
   modules: [],
   challenges: [],
   timetable: [],
+  sessions: [],
   profiles: [],
   enrollments: [],
   absences: [],
