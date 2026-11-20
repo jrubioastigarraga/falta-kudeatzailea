@@ -1,5 +1,7 @@
 # Falta Kudeatzailea
 
+**Web:** https://jrubioastigarraga.github.io/falta-kudeatzailea/
+
 Aplicación web para gestionar las faltas de asistencia de un curso de FP: calendario, módulos, retos, horario semanal (08:00–14:00), registro de faltas justificadas/no justificadas y estadísticas con porcentajes.
 
 - **Frontend:** Angular 21 (standalone, signals, hash routing) + Bootstrap 5 con estética [SB Admin 2](https://startbootstrap.com/theme/sb-admin-2).
@@ -9,8 +11,8 @@ Aplicación web para gestionar las faltas de asistencia de un curso de FP: calen
 
 ## Funcionalidad
 
-1. **Login** con email y contraseña (Supabase Auth). Registro de alumnado desde la propia pantalla de login.
-2. **Gestión de usuarios** (solo admin): rol, alta/baja, matrícula por curso.
+1. **Login** con email y contraseña (Supabase Auth). El administrador puede crear usuarios desde el panel; el alumnado también puede registrarse desde la pantalla de login.
+2. **Gestión de usuarios** (solo admin): alta con email/contraseña, rol, activo/inactivo y matrícula por curso.
 3. **Curso**: nombre, fecha de inicio/fin, festivos y evaluaciones.
 4. **Módulos**: nombre, código y color.
 5. **Retos**: nombre, módulo, fecha de inicio y fin.
@@ -44,6 +46,8 @@ Para nombrar administrador a un usuario ya registrado:
 ```sql
 update public.profiles set role = 'admin' where email = 'tu@email.eus';
 ```
+
+El alta de usuarios desde el panel usa `signUp` de Supabase: requiere que la confirmación por email esté desactivada (Authentication → Providers → Email → *Confirm email* off) para que la cuenta quede operativa al instante. Si se activa, el usuario deberá confirmar el correo antes de entrar.
 
 La anon key es pública por diseño; la seguridad depende de las políticas RLS incluidas en `schema.sql`. Los estudiantes solo pueden leer sus propias faltas y matrículas.
 

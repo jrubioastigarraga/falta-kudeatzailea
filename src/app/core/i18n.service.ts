@@ -132,6 +132,10 @@ const DICT: Record<string, Entry> = {
   'users.selfDelete': ['Ezin duzu zure burua ezabatu', 'No puedes eliminarte a ti mismo'],
   'users.created': ['Erabiltzailea sortu da', 'Usuario creado'],
   'users.emailExists': ['Email hori dagoeneko erregistratuta dago', 'Ese email ya está registrado'],
+  'users.createNote': [
+    'Erabiltzailea email eta pasahitzarekin sortuko da eta berehala has dezake saioa.',
+    'El usuario se creará con email y contraseña y podrá iniciar sesión inmediatamente.',
+  ],
   'users.permissionNote': [
     'Supabase-n erabiltzaileak administratzeko zerbitzu-gakoa behar da. Erregistratu eta gero editatu hemen.',
     'Gestionar altas en Supabase requiere la service key. Regístralos y edítalos aquí después.',

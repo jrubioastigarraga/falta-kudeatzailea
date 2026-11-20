@@ -187,8 +187,8 @@
             </div>
           </div>
           @if (!data.isDemo && !editing()) {
-            <div class="alert alert-warning py-2 px-3 text-xs mt-3 mb-0">
-              {{ i18n.t('users.permissionNote') }}
+            <div class="alert alert-info py-2 px-3 text-xs mt-3 mb-0">
+              {{ i18n.t('users.createNote') }}
             </div>
           }
         </div>
@@ -196,11 +196,9 @@
           <button class="btn btn-sm btn-outline-secondary" type="button" (click)="close()">
             {{ i18n.t('common.cancel') }}
           </button>
-          @if (data.isDemo || editing()) {
-            <button class="btn btn-sm btn-primary" type="submit" [disabled]="saving()">
-              {{ i18n.t('common.save') }}
-            </button>
-          }
+          <button class="btn btn-sm btn-primary" type="submit" [disabled]="saving()">
+            {{ i18n.t('common.save') }}
+          </button>
         </div>
       </form>
     </div>

@@ -173,4 +173,16 @@ export class AuthService {
       });
     }
   }
+
+  async refreshProfile(): Promise<void> {
+    if (isDemoMode) {
+      this.refreshDemoUser();
+      return;
+    }
+    if (!supabase) return;
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.user) {
+      await this.loadProfile(data.session.user.id, data.session.user.email ?? '');
+    }
+  }
 }

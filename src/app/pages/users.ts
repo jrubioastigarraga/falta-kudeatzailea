@@ -86,7 +86,7 @@ export class UsersPage {
           this.error.set(this.i18n.t('users.passwordHint'));
           return;
         }
-        await this.data.createDemoUser(
+        await this.data.createUser(
           this.fullName.trim(),
           this.email,
           this.password,

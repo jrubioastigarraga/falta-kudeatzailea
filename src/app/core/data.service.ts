@@ -128,10 +128,7 @@ export class DataService {
 
   private ensureSelectedCourse(): void {
     const courses = this.data().courses;
-    if (!courses.length) {
-      this.selectedCourseId.set('');
-      return;
-    }
+    if (!courses.length) return;
     const current = this.selectedCourseId();
     if (courses.some((c) => c.id === current)) return;
     const active = courses.find((c) => c.active) ?? courses[0];
@@ -418,41 +415,90 @@ export class DataService {
   async updateProfile(id: string, patch: Partial<Profile>): Promise<void> {
     await this.update('profiles', id, patch);
     await this.reload();
-    this.auth.refreshDemoUser();
+    await this.auth.refreshProfile();
   }
 
-  async createDemoUser(
+  async createUser(
     fullName: string,
     email: string,
     password: string,
     role: Profile['role'],
     enroll: boolean,
   ): Promise<void> {
-    if (!isDemoMode) throw new Error('NOT_DEMO');
     const normalized = email.trim().toLowerCase();
-    const data = loadDemoData();
-    if (data.profiles.some((p) => p.email.toLowerCase() === normalized)) {
-      throw new Error('EMAIL_EXISTS');
+
+    if (isDemoMode) {
+      const data = loadDemoData();
+      if (data.profiles.some((p) => p.email.toLowerCase() === normalized)) {
+        throw new Error('EMAIL_EXISTS');
+      }
+      const id = this.uid();
+      const profile: Profile = {
+        id,
+        email: normalized,
+        full_name: fullName,
+        role,
+        active: true,
+      };
+      const next: AppData = { ...data, profiles: [...data.profiles, profile] };
+      if (enroll) {
+        next.enrollments = [
+          ...data.enrollments,
+          { id: this.uid(), course_id: this.selectedCourseId(), student_id: id },
+        ];
+      }
+      saveDemoData(next);
+      const credentials = loadDemoCredentials();
+      saveDemoCredentials([...credentials, { email: normalized, password, profileId: id }]);
+      this.data.set(next);
+      return;
     }
-    const id = this.uid();
-    const profile: Profile = {
-      id,
+
+    if (!supabase) throw new Error('NO_SUPABASE');
+
+    const courseId = this.selectedCourseId();
+
+    // Keep the admin session; signUp would otherwise replace it with the new user.
+    const { data: sessionData } = await supabase.auth.getSession();
+    const adminSession = sessionData.session;
+
+    const { data, error } = await supabase.auth.signUp({
       email: normalized,
-      full_name: fullName,
-      role,
-      active: true,
-    };
-    const next: AppData = { ...data, profiles: [...data.profiles, profile] };
-    if (enroll) {
-      next.enrollments = [
-        ...data.enrollments,
-        { id: this.uid(), course_id: this.selectedCourseId(), student_id: id },
-      ];
+      password,
+      options: { data: { full_name: fullName } },
+    });
+    if (error) {
+      throw new Error(/already/i.test(error.message) ? 'EMAIL_EXISTS' : error.message);
     }
-    saveDemoData(next);
-    const credentials = loadDemoCredentials();
-    saveDemoCredentials([...credentials, { email: normalized, password, profileId: id }]);
-    this.data.set(next);
+
+    const newId = data.user?.id;
+    if (!newId) throw new Error('SIGNUP_FAILED');
+
+    if (data.session) {
+      await supabase.auth.signOut();
+    }
+    if (adminSession) {
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: adminSession.access_token,
+        refresh_token: adminSession.refresh_token,
+      });
+      if (sessionError) throw new Error('SESSION: ' + sessionError.message);
+    }
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ full_name: fullName, role, active: true })
+      .eq('id', newId);
+    if (profileError) throw new Error('PROFILE: ' + profileError.message);
+
+    if (enroll && role === 'student') {
+      const { error: enrollError } = await supabase
+        .from('enrollments')
+        .insert({ course_id: courseId, student_id: newId });
+      if (enrollError) throw new Error('ENROLL: ' + enrollError.message);
+    }
+    await this.auth.refreshProfile();
+    await this.reload();
   }
 
   async deleteDemoUser(id: string): Promise<void> {
