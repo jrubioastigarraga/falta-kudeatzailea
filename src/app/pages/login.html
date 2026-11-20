@@ -1,0 +1,122 @@
+<div class="fk-login">
+  <div class="position-fixed top-0 end-0 p-3">
+    <div class="btn-group fk-lang-toggle">
+      <button
+        type="button"
+        class="btn btn-sm"
+        [class.btn-light]="i18n.lang() === 'eu'"
+        [class.btn-outline-light]="i18n.lang() !== 'eu'"
+        (click)="setLang('eu')"
+      >
+        EU
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm"
+        [class.btn-light]="i18n.lang() === 'es'"
+        [class.btn-outline-light]="i18n.lang() !== 'es'"
+        (click)="setLang('es')"
+      >
+        ES
+      </button>
+    </div>
+  </div>
+
+  <div class="fk-login-card">
+    <div class="fk-login-logo">
+      <i class="fa-solid fa-calendar-check"></i>
+    </div>
+    <h1 class="h4 text-center font-weight-bold text-gray-800 mb-1">Falta Kudeatzailea</h1>
+    <p class="text-center text-gray-500 text-xs mb-4">
+      {{ i18n.t('login.subtitle') }}
+    </p>
+
+    @if (error()) {
+      <div class="alert alert-danger py-2 px-3 text-xs">{{ error() }}</div>
+    }
+    @if (info()) {
+      <div class="alert alert-info py-2 px-3 text-xs">{{ info() }}</div>
+    }
+
+    <form (ngSubmit)="submit()">
+      @if (mode() === 'signup') {
+        <div class="mb-3">
+          <label class="form-label">{{ i18n.t('login.fullName') }}</label>
+          <input
+            class="form-control"
+            name="fullName"
+            [(ngModel)]="fullName"
+            required
+            autocomplete="name"
+          />
+        </div>
+      }
+      <div class="mb-3">
+        <label class="form-label">{{ i18n.t('common.email') }}</label>
+        <input
+          class="form-control"
+          type="email"
+          name="email"
+          [(ngModel)]="email"
+          required
+          autocomplete="email"
+        />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">{{ i18n.t('common.password') }}</label>
+        <input
+          class="form-control"
+          type="password"
+          name="password"
+          [(ngModel)]="password"
+          required
+          autocomplete="current-password"
+        />
+      </div>
+
+      <button class="btn btn-primary w-100 py-2 font-weight-bold" type="submit" [disabled]="loading()">
+        @if (loading()) {
+          <i class="fa-solid fa-circle-notch fa-spin me-1"></i>
+        }
+        {{ mode() === 'login' ? i18n.t('login.signin') : i18n.t('login.signup') }}
+      </button>
+    </form>
+
+    @if (!auth.isDemo) {
+      <div class="text-center mt-3">
+        @if (mode() === 'login') {
+          <button class="btn btn-link btn-sm text-xs p-0" type="button" (click)="switchMode('signup')">
+            {{ i18n.t('login.noAccount') }}
+          </button>
+        } @else {
+          <button class="btn btn-link btn-sm text-xs p-0" type="button" (click)="switchMode('login')">
+            {{ i18n.t('login.haveAccount') }}
+          </button>
+        }
+      </div>
+    }
+
+    @if (auth.isDemo) {
+      <hr />
+      <div class="text-center text-xs text-gray-500 mb-2">{{ i18n.t('common.demoMode') }}</div>
+      <div class="d-grid gap-2">
+        <button
+          class="btn btn-sm btn-outline-primary"
+          type="button"
+          (click)="quickLogin('admin@falta.eus', 'admin123')"
+        >
+          <i class="fa-solid fa-user-shield me-1"></i>
+          admin@falta.eus / admin123
+        </button>
+        <button
+          class="btn btn-sm btn-outline-secondary"
+          type="button"
+          (click)="quickLogin('ana@falta.eus', 'ikasle123')"
+        >
+          <i class="fa-solid fa-user me-1"></i>
+          ana@falta.eus / ikasle123
+        </button>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,193 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div>
+    <h1 class="h3 mb-1 text-gray-800 font-weight-bold">{{ i18n.t('calendar.title') }}</h1>
+    <p class="text-gray-500 text-xs mb-0">{{ i18n.t('calendar.subtitle') }}</p>
+  </div>
+  <button class="btn btn-outline-primary btn-sm" type="button" (click)="newCourse()">
+    <i class="fa-solid fa-plus me-1"></i>{{ i18n.t('calendar.newCourse') }}
+  </button>
+</div>
+
+@if (!data.courses().length && !data.selectedCourse()) {
+  <div class="alert alert-info py-2 px-3 text-xs">{{ i18n.t('calendar.noCourses') }}</div>
+}
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header">{{ i18n.t('calendar.courseData') }}</div>
+      <div class="card-body">
+        @if (courseMessage()) {
+          <div class="alert alert-success py-2 px-3 text-xs">{{ courseMessage() }}</div>
+        }
+        <div class="mb-3">
+          <label class="form-label">{{ i18n.t('calendar.courseName') }}</label>
+          <input class="form-control" [(ngModel)]="courseName" placeholder="2026-2027" />
+        </div>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label">{{ i18n.t('calendar.start') }}</label>
+            <input class="form-control" type="date" [(ngModel)]="courseStart" />
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">{{ i18n.t('calendar.end') }}</label>
+            <input class="form-control" type="date" [(ngModel)]="courseEnd" [min]="courseStart" />
+          </div>
+        </div>
+        <div class="form-check form-switch mt-3">
+          <input class="form-check-input" type="checkbox" id="activeCourse" [(ngModel)]="courseActive" />
+          <label class="form-check-label text-xs" for="activeCourse">
+            {{ i18n.t('calendar.active') }}
+          </label>
+        </div>
+        <button class="btn btn-primary btn-sm mt-3" type="button" (click)="saveCourse()" [disabled]="courseSaving()">
+          <i class="fa-solid fa-floppy-disk me-1"></i>{{ i18n.t('common.save') }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header">
+        {{ i18n.t('calendar.holidays') }}
+        <span class="badge badge-soft-primary">{{ data.holidays().length }}</span>
+      </div>
+      <div class="card-body">
+        @if (data.selectedCourse()) {
+          <form class="row g-2 align-items-end mb-3" (ngSubmit)="addHoliday()">
+            <div class="col-sm-4">
+              <label class="form-label">{{ i18n.t('common.date') }}</label>
+              <input class="form-control form-control-sm" type="date" name="holidayDate" [(ngModel)]="holidayDate" />
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">{{ i18n.t('calendar.holidayName') }}</label>
+              <input class="form-control form-control-sm" name="holidayName" [(ngModel)]="holidayName" />
+            </div>
+            <div class="col-sm-2 d-grid">
+              <button class="btn btn-sm btn-primary" type="submit">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+          </form>
+          @if (holidayError()) {
+            <div class="alert alert-danger py-2 px-3 text-xs">{{ holidayError() }}</div>
+          }
+          <div class="table-responsive" style="max-height: 260px; overflow-y: auto">
+            <table class="table table-sm mb-0">
+              <tbody>
+                @for (holiday of data.holidays(); track holiday.id) {
+                  <tr>
+                    <td class="text-nowrap font-weight-bold text-xs" style="width: 120px">
+                      {{ i18n.formatDate(holiday.date) }}
+                    </td>
+                    <td class="text-xs">{{ holiday.name }}</td>
+                    <td class="text-end" style="width: 48px">
+                      <button class="btn btn-sm btn-link text-danger p-1" type="button" (click)="removeHoliday(holiday.id)">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td>
+                      <div class="fk-empty py-3 text-xs">{{ i18n.t('calendar.noHolidays') }}</div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <span>{{ i18n.t('calendar.evaluations') }}</span>
+        <button class="btn btn-sm btn-primary" type="button" (click)="openEvaluation()" [disabled]="!data.selectedCourse()">
+          <i class="fa-solid fa-plus me-1"></i>{{ i18n.t('calendar.addEvaluation') }}
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>{{ i18n.t('calendar.evalName') }}</th>
+              <th>{{ i18n.t('calendar.start') }}</th>
+              <th>{{ i18n.t('calendar.end') }}</th>
+              <th class="text-end">{{ i18n.t('common.actions') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (evaluation of data.evaluations(); track evaluation.id) {
+              <tr>
+                <td class="font-weight-bold">{{ evaluation.name }}</td>
+                <td class="text-xs">{{ i18n.formatDate(evaluation.start_date) }}</td>
+                <td class="text-xs">{{ i18n.formatDate(evaluation.end_date) }}</td>
+                <td class="text-end">
+                  <button class="btn btn-sm btn-outline-primary me-1" type="button" (click)="openEvaluation(evaluation)">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" type="button" (click)="removeEvaluation(evaluation.id)">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4">
+                  <div class="fk-empty py-4">
+                    <i class="fa-solid fa-list-check"></i>{{ i18n.t('calendar.noEvals') }}
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (evalModal()) {
+  <div class="modal-backdrop-custom" (click)="closeEvaluation()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0 font-weight-bold">
+          {{ evalEditing() ? i18n.t('common.edit') : i18n.t('calendar.addEvaluation') }}
+        </h2>
+        <button class="btn-close" type="button" (click)="closeEvaluation()"></button>
+      </div>
+      <form (ngSubmit)="saveEvaluation()">
+        <div class="modal-body">
+          @if (evalError()) {
+            <div class="alert alert-danger py-2 px-3 text-xs">{{ evalError() }}</div>
+          }
+          <div class="mb-3">
+            <label class="form-label">{{ i18n.t('calendar.evalName') }}</label>
+            <input class="form-control" name="evalName" [(ngModel)]="evalName" required />
+          </div>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label">{{ i18n.t('calendar.start') }}</label>
+              <input class="form-control" type="date" name="evalStart" [(ngModel)]="evalStart" required />
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">{{ i18n.t('calendar.end') }}</label>
+              <input class="form-control" type="date" name="evalEnd" [(ngModel)]="evalEnd" [min]="evalStart" required />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-end gap-2">
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeEvaluation()">
+            {{ i18n.t('common.cancel') }}
+          </button>
+          <button class="btn btn-sm btn-primary" type="submit">{{ i18n.t('common.save') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

@@ -1,0 +1,147 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div>
+    <h1 class="h3 mb-1 text-gray-800 font-weight-bold">{{ i18n.t('absences.title') }}</h1>
+    <p class="text-gray-500 text-xs mb-0">
+      {{ i18n.t('absences.subtitle') }} · {{ data.selectedCourse()?.name }}
+    </p>
+  </div>
+  <a class="btn btn-outline-primary btn-sm" routerLink="/reports">
+    <i class="fa-solid fa-chart-line me-1"></i>{{ i18n.t('nav.reports') }}
+  </a>
+</div>
+
+@if (error()) {
+  <div class="alert alert-danger py-2 px-3 text-xs">{{ error() }}</div>
+}
+
+@if (!students().length) {
+  <div class="card">
+    <div class="fk-empty">
+      <i class="fa-solid fa-user-graduate"></i>
+      <p>{{ i18n.t('absences.noStudents') }}</p>
+      @if (auth.isAdmin()) {
+        <a class="btn btn-primary btn-sm" routerLink="/users">{{ i18n.t('nav.users') }}</a>
+      }
+    </div>
+  </div>
+} @else {
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">{{ i18n.t('absences.student') }}</label>
+          @if (auth.isAdmin()) {
+            <select class="form-select form-select-sm" (change)="selectStudent($event)">
+              @for (student of students(); track student.id) {
+                <option [value]="student.id" [selected]="selectedStudentId() === student.id">
+                  {{ student.full_name }}
+                </option>
+              }
+            </select>
+          } @else {
+            <div class="form-control form-control-sm bg-light">{{ studentName() }}</div>
+          }
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">{{ i18n.t('absences.week') }}</label>
+          <div class="d-flex align-items-center gap-1">
+            <button class="btn btn-sm btn-outline-secondary" type="button" (click)="changeWeek(-1)" [title]="i18n.t('absences.prevWeek')">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="form-control form-control-sm text-center font-weight-bold text-nowrap">
+              {{ weekLabel() }}
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" type="button" (click)="changeWeek(1)" [title]="i18n.t('absences.nextWeek')">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-primary text-nowrap" type="button" (click)="goToday()">
+              {{ i18n.t('common.today') }}
+            </button>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="d-flex gap-2 justify-content-md-end">
+            <span class="badge badge-soft-warning py-2">
+              <i class="fa-solid fa-file-circle-check me-1"></i>{{ summary().justified }}
+            </span>
+            <span class="badge badge-soft-danger py-2">
+              <i class="fa-solid fa-circle-xmark me-1"></i>{{ summary().unjustified }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="text-gray-500 text-xs mt-3">
+        <span class="legend-dot" style="background: #c3c6d4"></span>{{ i18n.t('status.present') }}
+        <span class="legend-dot ms-3" style="background: #f6c23e"></span>{{ i18n.t('status.justified') }}
+        <span class="legend-dot ms-3" style="background: #e74a3b"></span>{{ i18n.t('status.unjustified') }}
+        @if (canEdit()) {
+          <span class="ms-3"><i class="fa-solid fa-arrow-pointer me-1"></i>{{ i18n.t('absences.legend') }}</span>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (!data.timetable().length) {
+    <div class="alert alert-warning py-2 px-3 text-xs">
+      <i class="fa-solid fa-triangle-exclamation me-1"></i>{{ i18n.t('absences.noModules') }}
+      @if (auth.isAdmin()) {
+        <a routerLink="/timetable" class="alert-link ms-1">{{ i18n.t('nav.timetable') }}</a>
+      }
+    </div>
+  }
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-bordered timetable mb-0">
+        <thead>
+          <tr>
+            <th class="hour-col">{{ i18n.t('common.hours') }}</th>
+            @for (day of weekDays(); track day.iso) {
+              <th>
+                <div class="text-uppercase">{{ i18n.weekdayName(day.weekday) }}</div>
+                <div class="text-gray-500 font-weight-normal">{{ i18n.formatDayMonth(day.iso) }}</div>
+                @if (holidayDates().has(day.iso)) {
+                  <span class="badge badge-soft-warning mt-1">{{ i18n.t('absences.holiday') }}</span>
+                }
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.hour) {
+            <tr>
+              <td class="hour-col">{{ row.hour }}:00</td>
+              @for (cell of row.cells; track cell.iso + '-' + cell.hour) {
+                <td>
+                  @if (cell.moduleId) {
+                    <button
+                      type="button"
+                      class="attendance-cell"
+                      [class.justified]="cell.status === 'justified'"
+                      [class.unjustified]="cell.status === 'unjustified'"
+                      [class.empty]="!canEdit() || cell.holiday || cell.outOfCourse"
+                      [disabled]="!canEdit() || cell.holiday || cell.outOfCourse"
+                      (click)="cycle(cell)"
+                      [title]="i18n.t('absences.legend')"
+                    >
+                      <div class="text-truncate">{{ cell.moduleCode }}</div>
+                      @if (cell.status === 'justified') {
+                        <div><i class="fa-solid fa-file-circle-check"></i> {{ i18n.t('reports.justifiedShort') }}</div>
+                      } @else if (cell.status === 'unjustified') {
+                        <div><i class="fa-solid fa-circle-xmark"></i> {{ i18n.t('reports.unjustifiedShort') }}</div>
+                      } @else {
+                        <div class="opacity-50">—</div>
+                      }
+                    </button>
+                  } @else {
+                    <span class="text-gray-500 opacity-25">·</span>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

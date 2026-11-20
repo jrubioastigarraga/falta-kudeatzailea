@@ -1,0 +1,192 @@
+@if (sidebarOpen()) {
+  <div class="fk-backdrop d-lg-none" (click)="sidebarOpen.set(false)"></div>
+}
+
+<aside class="fk-sidebar" [class.open]="sidebarOpen()">
+  <a class="navbar-brand" routerLink="/dashboard" (click)="sidebarOpen.set(false)">
+    <i class="fa-solid fa-calendar-check"></i>
+    <span>Falta<br />Kudeatzailea</span>
+  </a>
+
+  <div class="nav-section">{{ i18n.t('nav.main') }}</div>
+  <nav class="nav flex-column">
+    <div class="nav-item">
+      <a
+        class="nav-link"
+        routerLink="/dashboard"
+        routerLinkActive="active"
+        (click)="sidebarOpen.set(false)"
+      >
+        <i class="fa-solid fa-gauge-high"></i>
+        {{ i18n.t('nav.dashboard') }}
+      </a>
+    </div>
+    <div class="nav-item">
+      <a
+        class="nav-link"
+        routerLink="/absences"
+        routerLinkActive="active"
+        (click)="sidebarOpen.set(false)"
+      >
+        <i class="fa-solid fa-clipboard-user"></i>
+        {{ i18n.t('nav.absences') }}
+      </a>
+    </div>
+    <div class="nav-item">
+      <a
+        class="nav-link"
+        routerLink="/reports"
+        routerLinkActive="active"
+        (click)="sidebarOpen.set(false)"
+      >
+        <i class="fa-solid fa-chart-line"></i>
+        {{ i18n.t('nav.reports') }}
+      </a>
+    </div>
+  </nav>
+
+  @if (auth.isAdmin()) {
+    <div class="nav-section">{{ i18n.t('nav.management') }}</div>
+    <nav class="nav flex-column">
+      <div class="nav-item">
+        <a
+          class="nav-link"
+          routerLink="/users"
+          routerLinkActive="active"
+          (click)="sidebarOpen.set(false)"
+        >
+          <i class="fa-solid fa-users"></i>
+          {{ i18n.t('nav.users') }}
+        </a>
+      </div>
+      <div class="nav-item">
+        <a
+          class="nav-link"
+          routerLink="/calendar"
+          routerLinkActive="active"
+          (click)="sidebarOpen.set(false)"
+        >
+          <i class="fa-solid fa-calendar-days"></i>
+          {{ i18n.t('nav.calendar') }}
+        </a>
+      </div>
+      <div class="nav-item">
+        <a
+          class="nav-link"
+          routerLink="/modules"
+          routerLinkActive="active"
+          (click)="sidebarOpen.set(false)"
+        >
+          <i class="fa-solid fa-cubes"></i>
+          {{ i18n.t('nav.modules') }}
+        </a>
+      </div>
+      <div class="nav-item">
+        <a
+          class="nav-link"
+          routerLink="/challenges"
+          routerLinkActive="active"
+          (click)="sidebarOpen.set(false)"
+        >
+          <i class="fa-solid fa-flag-checkered"></i>
+          {{ i18n.t('nav.challenges') }}
+        </a>
+      </div>
+      <div class="nav-item">
+        <a
+          class="nav-link"
+          routerLink="/timetable"
+          routerLinkActive="active"
+          (click)="sidebarOpen.set(false)"
+        >
+          <i class="fa-solid fa-table-cells-large"></i>
+          {{ i18n.t('nav.timetable') }}
+        </a>
+      </div>
+    </nav>
+  }
+
+  <div class="mt-auto p-3 text-white-50 text-xs">
+    <div class="mb-1">Falta Kudeatzailea v1.0</div>
+    @if (data.isDemo) {
+      <span class="badge badge-soft-warning">{{ i18n.t('common.demoMode') }}</span>
+    }
+  </div>
+</aside>
+
+<div class="fk-main">
+  <header class="fk-topbar">
+    <button
+      class="btn btn-link text-gray-800 d-lg-none me-auto p-0"
+      type="button"
+      (click)="sidebarOpen.set(true)"
+      aria-label="Menu"
+    >
+      <i class="fa-solid fa-bars fa-lg"></i>
+    </button>
+
+    <div class="d-none d-md-flex align-items-center gap-2 me-auto">
+      <i class="fa-solid fa-calendar-day text-gray-500"></i>
+      <select
+        class="form-select form-select-sm"
+        style="width: auto"
+        (change)="changeCourse($event)"
+        aria-label="Course"
+      >
+        @for (course of data.courses(); track course.id) {
+          <option [value]="course.id" [selected]="data.selectedCourseId() === course.id">
+            {{ course.name }}
+          </option>
+        }
+        @if (!data.courses().length) {
+          <option value="">{{ i18n.t('dashboard.noCourse') }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="btn-group fk-lang-toggle" role="group" aria-label="Language">
+      <button
+        type="button"
+        class="btn"
+        [class.btn-primary]="i18n.lang() === 'eu'"
+        [class.btn-outline-secondary]="i18n.lang() !== 'eu'"
+        (click)="setLang('eu')"
+      >
+        EU
+      </button>
+      <button
+        type="button"
+        class="btn"
+        [class.btn-primary]="i18n.lang() === 'es'"
+        [class.btn-outline-secondary]="i18n.lang() !== 'es'"
+        (click)="setLang('es')"
+      >
+        ES
+      </button>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 ms-2 ps-3 border-start">
+      <span class="fk-avatar">{{ (auth.user()?.full_name || '?').charAt(0) }}</span>
+      <div class="d-none d-sm-block lh-sm">
+        <div class="font-weight-bold" style="font-size: 0.82rem">
+          {{ auth.user()?.full_name }}
+        </div>
+        <div class="text-gray-500 text-xs">
+          {{ auth.isAdmin() ? i18n.t('role.admin') : i18n.t('role.student') }}
+        </div>
+      </div>
+      <button
+        class="btn btn-sm btn-outline-secondary ms-1"
+        type="button"
+        (click)="logout()"
+        [title]="i18n.t('common.logout')"
+      >
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="fk-content">
+    <router-outlet />
+  </main>
+</div>

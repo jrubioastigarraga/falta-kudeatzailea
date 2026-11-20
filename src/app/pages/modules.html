@@ -1,0 +1,119 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div>
+    <h1 class="h3 mb-1 text-gray-800 font-weight-bold">{{ i18n.t('modules.title') }}</h1>
+    <p class="text-gray-500 text-xs mb-0">
+      {{ i18n.t('modules.subtitle') }} · {{ data.selectedCourse()?.name }}
+    </p>
+  </div>
+  <button class="btn btn-primary btn-sm" type="button" (click)="open()">
+    <i class="fa-solid fa-plus me-1"></i>{{ i18n.t('modules.new') }}
+  </button>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>{{ i18n.t('common.module') }}</th>
+          <th>{{ i18n.t('modules.code') }}</th>
+          <th>{{ i18n.t('nav.timetable') }}</th>
+          <th>{{ i18n.t('dashboard.challenges') }}</th>
+          <th>{{ i18n.t('dashboard.absences') }}</th>
+          <th class="text-end">{{ i18n.t('common.actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.module.id) {
+          <tr>
+            <td>
+              <span class="legend-dot" [style.background]="row.module.color"></span>
+              <span class="font-weight-bold">{{ row.module.name }}</span>
+            </td>
+            <td>
+              @if (row.module.code) {
+                <span class="badge badge-soft-secondary">{{ row.module.code }}</span>
+              } @else {
+                <span class="text-gray-500">—</span>
+              }
+            </td>
+            <td class="text-xs">
+              {{ row.weeklyHours }} {{ i18n.t('common.hours') }} / {{ i18n.t('common.week') }}
+            </td>
+            <td class="text-xs">{{ row.challenges }}</td>
+            <td class="text-xs">{{ row.absences }}</td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary me-1" type="button" (click)="open(row.module)">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" type="button" (click)="remove(row.module)">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6">
+              <div class="fk-empty py-4">
+                <i class="fa-solid fa-cubes"></i>{{ i18n.t('modules.empty') }}
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (modalOpen()) {
+  <div class="modal-backdrop-custom" (click)="close()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0 font-weight-bold">
+          {{ editing() ? i18n.t('modules.edit') : i18n.t('modules.new') }}
+        </h2>
+        <button class="btn-close" type="button" (click)="close()"></button>
+      </div>
+      <form (ngSubmit)="save()">
+        <div class="modal-body">
+          @if (error()) {
+            <div class="alert alert-danger py-2 px-3 text-xs">{{ error() }}</div>
+          }
+          <div class="mb-3">
+            <label class="form-label">{{ i18n.t('modules.name') }}</label>
+            <input class="form-control" name="name" [(ngModel)]="name" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">{{ i18n.t('modules.code') }}</label>
+            <input class="form-control" name="code" [(ngModel)]="code" style="max-width: 140px" />
+          </div>
+          <div class="mb-1">
+            <label class="form-label">{{ i18n.t('modules.color') }}</label>
+            <div class="d-flex flex-wrap gap-2">
+              @for (c of colors; track c) {
+                <button
+                  type="button"
+                  class="btn p-0 border"
+                  style="width: 2rem; height: 2rem; border-radius: 50%"
+                  [style.background]="c"
+                  [style.outline]="color === c ? '2px solid #2e59d9' : 'none'"
+                  [style.outline-offset]="'2px'"
+                  (click)="color = c"
+                  [attr.aria-label]="c"
+                ></button>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-end gap-2">
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="close()">
+            {{ i18n.t('common.cancel') }}
+          </button>
+          <button class="btn btn-sm btn-primary" type="submit" [disabled]="saving()">
+            {{ i18n.t('common.save') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
